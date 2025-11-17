@@ -1,9 +1,10 @@
 return {
-	"scottmckendry/cyberdream.nvim",
-	lazy = false,
-	priority = 1000,
-	config = function()
-		-- load the colorscheme here
-		vim.cmd([[colorscheme cyberdream]])
-	end,
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {},
+    config = function()
+        -- Load the colorscheme
+        vim.cmd.colorscheme("tokyonight")
+    end,
 }
