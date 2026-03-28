@@ -4,20 +4,15 @@ return {
         "williamboman/mason.nvim",
         "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
+        "artemave/workspace-diagnostics.nvim", -- Required for closed-file diagnostics
         {
             "folke/lazydev.nvim",
-            ft = "lua", -- only load on lua files
+            ft = "lua",
             dependencies = {
-                {
-                    'DrKJeff16/wezterm-types',
-                    lazy = true,
-                    version = false, -- Get the latest version
-                },
+                { 'DrKJeff16/wezterm-types', lazy = true },
             },
             opts = {
                 library = {
-                    -- See the configuration section for more details
-                    -- Load luvit types when the `vim.uv` word is found
                     { path = "${3rd}/luv/library", words = { "vim%.uv" } },
                     { path = 'wezterm-types', mods = { 'wezterm' } },
                 },
@@ -25,21 +20,33 @@ return {
         },
     },
     config = function()
-        require("mason").setup()
-        require("mason-lspconfig").setup({
-            ensure_installed = {
-                "lua_ls",
-                "pyright",
-                "clangd",
-                "texlab",
-            },
-        })
+        local capabilities = require("cmp_nvim_lsp").default_capabilities()
+        local lspconfig = require("lspconfig")
 
+        -- 1. LSP Attach Logic (Keymaps & Workspace Scan)
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
             callback = function(event)
+                local client = vim.lsp.get_client_by_id(event.data.client_id)
+                local bufnr = event.buf
+
+                if not client then return end
+
+                -- Automate workspace-wide diagnostic scanning
+                require("workspace-diagnostics").populate_workspace_diagnostics(client, bufnr)
+
                 local map = function(keys, func, desc)
-                    vim.keymap.set("n", keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
+                    vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc })
+                end
+
+                local copy_diagnostic = function()
+                    local line_diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1 })
+                    if vim.tbl_isempty(line_diagnostics) then return end
+
+                    -- Get the first diagnostic message on the current line
+                    local msg = line_diagnostics[1].message
+                    vim.fn.setreg('+', msg) -- Copy to system clipboard
+                    print("Copied diagnostic: " .. msg)
                 end
 
                 map("gd", require("telescope.builtin").lsp_definitions, "Go to definition")
@@ -52,60 +59,68 @@ return {
                 map("<leader>ca", vim.lsp.buf.code_action, "Code action")
                 map("K", vim.lsp.buf.hover, "Hover documentation")
                 map("gD", vim.lsp.buf.declaration, "Go to declaration")
+                map("<leader>ce", copy_diagnostic, "Copy Error message")
+
+                -- Diagnostic navigation
+                map("]d", function() vim.diagnostic.jump({ count = 1 }) end, "Next Diagnostic")
+                map("[d", function() vim.diagnostic.jump({ count = -1 }) end, "Prev Diagnostic")
             end,
         })
 
-        local capabilities = require("cmp_nvim_lsp").default_capabilities()
-        vim.lsp.config("lua_ls", {
-            capabilities = capabilities,
-            settings = {
-                Lua = {
-                    diagnostics = {
-                        globals = { "vim" },
-                    },
-                },
+        -- 2. Mason & Server Setup
+        require("mason").setup()
+        require("mason-lspconfig").setup({
+            ensure_installed = { "lua_ls", "pyright", "clangd", "texlab" },
+            handlers = {
+                -- Default handler
+                function(server_name)
+                    lspconfig[server_name].setup({
+                        capabilities = capabilities,
+                    })
+                end,
+                -- Dedicated Lua handler
+                ["lua_ls"] = function()
+                    lspconfig.lua_ls.setup({
+                        capabilities = capabilities,
+                        settings = {
+                            Lua = {
+                                diagnostics = { globals = { "vim" } },
+                            },
+                        },
+                    })
+                end,
             },
         })
 
-        vim.lsp.config("pyright", {
-            capabilities = capabilities,
-        })
-
-        vim.lsp.config("clangd", {
-            capabilities = capabilities,
-        })
-
-        vim.lsp.config("texlab", {
-            capabilities = capabilities,
-        })
-
-        -- Enable the LSP servers for their respective filetypes
-        vim.lsp.enable("lua_ls")
-        vim.lsp.enable("pyright")
-        vim.lsp.enable("clangd")
-        vim.lsp.enable("texlab")
-
-        -- Configure diagnostics (enables inline virtual text)
+        -- 3. Diagnostic Configuration
         vim.diagnostic.config({
-            virtual_text = {
-                prefix = '■',
-                spacing = 4,
-                source = "if_many",
+            virtual_text = false, -- Turned off so it doesn't clutter your code
+            signs = {
+                text = {
+                    [vim.diagnostic.severity.ERROR] = '✘',
+                    [vim.diagnostic.severity.WARN]  = '▲',
+                    [vim.diagnostic.severity.HINT]  = '⚑',
+                    [vim.diagnostic.severity.INFO]  = '»',
+                },
             },
             float = {
                 focusable = false,
                 style = "minimal",
                 border = "rounded",
-                source = "if_many",
+                source = true,
                 header = "",
                 prefix = "",
             },
-            signs = true,
             underline = true,
             update_in_insert = false,
             severity_sort = true,
+        })
 
+        -- Auto-show diagnostic popup on cursor hold
+        vim.api.nvim_create_autocmd("CursorHold", {
+            callback = function()
+                vim.diagnostic.open_float(nil, { focusable = false })
+            end,
         })
     end,
-
 }
