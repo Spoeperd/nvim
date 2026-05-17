@@ -14,14 +14,25 @@ return {
             opts = {
                 library = {
                     { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-                    { path = 'wezterm-types', mods = { 'wezterm' } },
+                    { path = 'wezterm-types',      mods = { 'wezterm' } },
                 },
             },
         },
     },
     config = function()
         local capabilities = require("cmp_nvim_lsp").default_capabilities()
-        local lspconfig = require("lspconfig")
+
+        vim.lsp.config('*', { capabilities = capabilities })
+
+        vim.lsp.config('lua_ls', {
+            settings = {
+                Lua = {
+                    diagnostics = { globals = { "vim" } },
+                },
+            },
+        })
+
+        vim.lsp.enable({ "lua_ls", "pyright", "clangd", "texlab" })
 
         -- 1. LSP Attach Logic (Keymaps & Workspace Scan)
         vim.api.nvim_create_autocmd("LspAttach", {
@@ -32,6 +43,15 @@ return {
 
                 if not client then return end
 
+                if client:supports_method("textDocument/formatting") then
+                    vim.api.nvim_create_autocmd("BufWritePre", {
+                        buffer = bufnr,
+                        callback = function()
+                            vim.lsp.buf.format({ bufnr = bufnr, async = false })
+                        end,
+                    })
+                end
+
                 -- Automate workspace-wide diagnostic scanning
                 require("workspace-diagnostics").populate_workspace_diagnostics(client, bufnr)
 
@@ -40,13 +60,11 @@ return {
                 end
 
                 local copy_diagnostic = function()
-                    local line_diagnostics = vim.diagnostic.get(0, { lnum = vim.fn.line('.') - 1 })
+                    local line_diagnostics = vim.diagnostic.get(0, { lnum = vim.api.nvim_win_get_cursor(0)[1] - 1 })
                     if vim.tbl_isempty(line_diagnostics) then return end
-
-                    -- Get the first diagnostic message on the current line
                     local msg = line_diagnostics[1].message
-                    vim.fn.setreg('+', msg) -- Copy to system clipboard
-                    print("Copied diagnostic: " .. msg)
+                    vim.fn.setreg('+', msg)
+                    vim.notify("Copied: " .. msg, vim.log.levels.INFO)
                 end
 
                 map("gd", require("telescope.builtin").lsp_definitions, "Go to definition")
@@ -60,8 +78,6 @@ return {
                 map("K", vim.lsp.buf.hover, "Hover documentation")
                 map("gD", vim.lsp.buf.declaration, "Go to declaration")
                 map("<leader>ce", copy_diagnostic, "Copy Error message")
-
-                -- Diagnostic navigation
                 map("]d", function() vim.diagnostic.jump({ count = 1 }) end, "Next Diagnostic")
                 map("[d", function() vim.diagnostic.jump({ count = -1 }) end, "Prev Diagnostic")
             end,
@@ -71,25 +87,6 @@ return {
         require("mason").setup()
         require("mason-lspconfig").setup({
             ensure_installed = { "lua_ls", "pyright", "clangd", "texlab" },
-            handlers = {
-                -- Default handler
-                function(server_name)
-                    lspconfig[server_name].setup({
-                        capabilities = capabilities,
-                    })
-                end,
-                -- Dedicated Lua handler
-                ["lua_ls"] = function()
-                    lspconfig.lua_ls.setup({
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                diagnostics = { globals = { "vim" } },
-                            },
-                        },
-                    })
-                end,
-            },
         })
 
         -- 3. Diagnostic Configuration
@@ -119,7 +116,9 @@ return {
         -- Auto-show diagnostic popup on cursor hold
         vim.api.nvim_create_autocmd("CursorHold", {
             callback = function()
-                vim.diagnostic.open_float(nil, { focusable = false })
+                if vim.fn.mode() == "n" then
+                    vim.diagnostic.open_float(nil, { focusable = false })
+                end
             end,
         })
     end,

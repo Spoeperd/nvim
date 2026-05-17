@@ -4,6 +4,6 @@ return {
 		{ "<leader>u", "<cmd>UndotreeToggle<cr>", desc = "Toggle Undotree" },
 	},
     init = function()
-        vim.g.undotree_SetFocus = 1
+        vim.g.undotree_SetFocusWhenToggle = 1
     end,
 }

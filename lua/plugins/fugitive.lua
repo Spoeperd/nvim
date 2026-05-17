@@ -105,16 +105,7 @@ return {
             end,
             desc = "Git Commit"
         },
-        {
-            "<leader>gp",
-            "<cmd>botright 10split | Git push<cr>",
-            desc = "Git Push"
-        },
-        {
-            "<leader>gP",
-            "<cmd>botright 10split | Git pull<cr>",
-            desc = "Git Pull"
-        },
-
+        { "<leader>gp", "<cmd>Git push<cr>", desc = "Git Push" },
+        { "<leader>gP", "<cmd>Git pull<cr>", desc = "Git Pull" },
     },
 }
