@@ -1,10 +1,10 @@
 return {
-    "rose-pine/neovim",
+    "catppuccin/nvim",
     lazy = false,
     priority = 1000,
     opts = {},
     config = function()
         -- Load the colorscheme
-        vim.cmd.colorscheme("rose-pine")
+        vim.cmd.colorscheme("catppuccin")
     end,
 }
