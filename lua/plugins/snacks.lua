@@ -28,5 +28,8 @@ return {
         { "<leader>pd", function() Snacks.explorer({ focus = "input" }) end, desc = "Snacks: Find Directories" },
 
         { "<leader>gs", function() Snacks.lazygit() end,                     desc = "Git: Toggle Status & Panel (LazyGit)" },
+        { "<leader>gb", function() Snacks.git.blame_line() end,              desc = "Git: Blame Line (Inline Virtual Text)" },
+        { "<leader>gd", function() Snacks.picker.git_diff() end,             desc = "Git: View File Diff Changes" },
+        { "<leader>gl", function() Snacks.picker.git_log() end,              desc = "Git: View Commit Log History" },
     },
 }
