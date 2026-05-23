@@ -4,7 +4,7 @@ return {
         "williamboman/mason.nvim",
         "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
-        "artemave/workspace-diagnostics.nvim", -- Required for closed-file diagnostics
+        "artemave/workspace-diagnostics.nvim",
         {
             "folke/lazydev.nvim",
             ft = "lua",
@@ -15,6 +15,7 @@ return {
                 library = {
                     { path = "${3rd}/luv/library", words = { "vim%.uv" } },
                     { path = 'wezterm-types',      mods = { 'wezterm' } },
+                    { path = "snacks.nvim",        words = { "Snacks" } },
                 },
             },
         },
@@ -23,18 +24,8 @@ return {
         local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
         vim.lsp.config('*', { capabilities = capabilities })
-
-        vim.lsp.config('lua_ls', {
-            settings = {
-                Lua = {
-                    diagnostics = { globals = { "vim" } },
-                },
-            },
-        })
-
         vim.lsp.enable({ "lua_ls", "pyright", "clangd", "texlab" })
 
-        -- 1. LSP Attach Logic (Keymaps & Workspace Scan)
         vim.api.nvim_create_autocmd("LspAttach", {
             group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
             callback = function(event)
@@ -43,16 +34,6 @@ return {
 
                 if not client then return end
 
-                if client:supports_method("textDocument/formatting") then
-                    vim.api.nvim_create_autocmd("BufWritePre", {
-                        buffer = bufnr,
-                        callback = function()
-                            vim.lsp.buf.format({ bufnr = bufnr, async = false })
-                        end,
-                    })
-                end
-
-                -- Automate workspace-wide diagnostic scanning
                 require("workspace-diagnostics").populate_workspace_diagnostics(client, bufnr)
 
                 local map = function(keys, func, desc)
@@ -67,12 +48,13 @@ return {
                     vim.notify("Copied: " .. msg, vim.log.levels.INFO)
                 end
 
-                map("gd", require("telescope.builtin").lsp_definitions, "Go to definition")
-                map("gr", require("telescope.builtin").lsp_references, "Go to references")
-                map("gI", require("telescope.builtin").lsp_implementations, "Go to implementation")
-                map("<leader>D", require("telescope.builtin").lsp_type_definitions, "Type definition")
-                map("<leader>ds", require("telescope.builtin").lsp_document_symbols, "Document symbols")
-                map("<leader>ws", require("telescope.builtin").lsp_dynamic_workspace_symbols, "Workspace symbols")
+                map("gd", function() Snacks.picker.lsp_definitions() end, "Go to definition")
+                map("gr", function() Snacks.picker.lsp_references() end, "Go to references")
+                map("gI", function() Snacks.picker.lsp_implementations() end, "Go to implementation")
+                map("<leader>D", function() Snacks.picker.lsp_type_definitions() end, "Type definition")
+                map("<leader>ds", function() Snacks.picker.lsp_symbols() end, "Document symbols")
+                map("<leader>ws", function() Snacks.picker.lsp_workspace_symbols() end, "Workspace symbols")
+
                 map("<leader>rn", vim.lsp.buf.rename, "Rename")
                 map("<leader>ca", vim.lsp.buf.code_action, "Code action")
                 map("K", vim.lsp.buf.hover, "Hover documentation")
@@ -83,15 +65,13 @@ return {
             end,
         })
 
-        -- 2. Mason & Server Setup
         require("mason").setup()
         require("mason-lspconfig").setup({
-            ensure_installed = { "lua_ls", "pyright", "clangd", "texlab" },
+            ensure_installed = { "pyright", "clangd", "texlab" },
         })
 
-        -- 3. Diagnostic Configuration
         vim.diagnostic.config({
-            virtual_text = false, -- Turned off so it doesn't clutter your code
+            virtual_text = false,
             signs = {
                 text = {
                     [vim.diagnostic.severity.ERROR] = '✘',
@@ -111,15 +91,6 @@ return {
             underline = true,
             update_in_insert = false,
             severity_sort = true,
-        })
-
-        -- Auto-show diagnostic popup on cursor hold
-        vim.api.nvim_create_autocmd("CursorHold", {
-            callback = function()
-                if vim.fn.mode() == "n" then
-                    vim.diagnostic.open_float(nil, { focusable = false })
-                end
-            end,
         })
     end,
 }
