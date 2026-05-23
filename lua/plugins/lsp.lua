@@ -32,25 +32,23 @@ return {
                     vim.notify("Copied: " .. msg, vim.log.levels.INFO)
                 end
 
-                map("gd", function() Snacks.picker.lsp_definitions() end, "Go to definition")
-                map("gr", function() Snacks.picker.lsp_references() end, "Go to references")
-                map("gI", function() Snacks.picker.lsp_implementations() end, "Go to implementation")
-                map("<leader>D", function() Snacks.picker.lsp_type_definitions() end, "Type definition")
-                map("<leader>ds", function() Snacks.picker.lsp_symbols() end, "Document symbols")
-                map("<leader>ws", function() Snacks.picker.lsp_workspace_symbols() end, "Workspace symbols")
-
                 map("<leader>rn", vim.lsp.buf.rename, "Rename")
                 map("<leader>ca", vim.lsp.buf.code_action, "Code action")
                 map("K", vim.lsp.buf.hover, "Hover documentation")
                 map("gD", vim.lsp.buf.declaration, "Go to declaration")
                 map("<leader>ce", copy_diagnostic, "Copy Error message")
                 map("]e", function()
-                    vim.diagnostic.jump({ count = 1 })
-                    vim.diagnostic.open_float(nil, { focusable = false })
+                    vim.diagnostic.jump({
+                        count = 1,
+                        float = true,
+                    })
                 end, "Next Diagnostic")
+
                 map("[e", function()
-                    vim.diagnostic.jump({ count = -1 })
-                    vim.diagnostic.open_float(nil, { focusable = false })
+                    vim.diagnostic.jump({
+                        count = -1,
+                        float = true,
+                    })
                 end, "Prev Diagnostic")
             end,
         })
@@ -63,10 +61,10 @@ return {
 
             signs = {
                 text = {
-                    [vim.diagnostic.severity.ERROR] = '✘',
-                    [vim.diagnostic.severity.WARN]  = '▲',
-                    [vim.diagnostic.severity.HINT]  = '⚑',
-                    [vim.diagnostic.severity.INFO]  = '»',
+                    [vim.diagnostic.severity.ERROR] = " ",
+                    [vim.diagnostic.severity.WARN]  = " ",
+                    [vim.diagnostic.severity.HINT]  = "💡",
+                    [vim.diagnostic.severity.INFO]  = " ",
                 },
             },
 
