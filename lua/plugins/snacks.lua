@@ -4,11 +4,17 @@ return {
     lazy = false,
     ---@type snacks.Config
     opts = {
-        picker = { enabled = true },
+        picker = {
+            enabled = true,
+            sources = {
+                explorer = {
+                    focus = "list",
+                    auto_close = true,
+                }
+            }
+        },
         explorer = {
             enabled = true,
-            focus = "list",
-            auto_close = true,
             replace_netrw = true,
         },
         dashboard = { enabled = true },
@@ -19,6 +25,8 @@ return {
         { "<leader>pf", function() Snacks.picker.files() end,                desc = "Snacks: Find Files" },
         { "<leader>ps", function() Snacks.picker.grep() end,                 desc = "Snacks: Live Grep" },
         { "<leader>pe", function() Snacks.explorer() end,                    desc = "Snacks: Explorer" },
-        { "<leader>pd", function() Snacks.explorer({ focus = "input" }) end, desc = "Snacks: Find Directories" }
+        { "<leader>pd", function() Snacks.explorer({ focus = "input" }) end, desc = "Snacks: Find Directories" },
+
+        { "<leader>gs", function() Snacks.lazygit() end,                     desc = "Git: Toggle Status & Panel (LazyGit)" },
     },
 }
