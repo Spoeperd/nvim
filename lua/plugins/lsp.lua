@@ -37,19 +37,8 @@ return {
                 map("K", vim.lsp.buf.hover, "Hover documentation")
                 map("gD", vim.lsp.buf.declaration, "Go to declaration")
                 map("<leader>ce", copy_diagnostic, "Copy Error message")
-                map("]e", function()
-                    vim.diagnostic.jump({
-                        count = 1,
-                        float = true,
-                    })
-                end, "Next Diagnostic")
-
-                map("[e", function()
-                    vim.diagnostic.jump({
-                        count = -1,
-                        float = true,
-                    })
-                end, "Prev Diagnostic")
+                map("]e", function() vim.diagnostic.jump({ count = 1, float = true, }) end, "Next Diagnostic")
+                map("[e", function() vim.diagnostic.jump({ count = -1, float = true, }) end, "Prev Diagnostic")
             end,
         })
 
