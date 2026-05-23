@@ -1,24 +1,8 @@
 return {
     "neovim/nvim-lspconfig",
     dependencies = {
-        "williamboman/mason.nvim",
-        "williamboman/mason-lspconfig.nvim",
         "hrsh7th/cmp-nvim-lsp",
         "artemave/workspace-diagnostics.nvim",
-        {
-            "folke/lazydev.nvim",
-            ft = "lua",
-            dependencies = {
-                { 'DrKJeff16/wezterm-types', lazy = true },
-            },
-            opts = {
-                library = {
-                    { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-                    { path = 'wezterm-types',      mods = { 'wezterm' } },
-                    { path = "snacks.nvim",        words = { "Snacks" } },
-                },
-            },
-        },
     },
     config = function()
         local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -60,18 +44,23 @@ return {
                 map("K", vim.lsp.buf.hover, "Hover documentation")
                 map("gD", vim.lsp.buf.declaration, "Go to declaration")
                 map("<leader>ce", copy_diagnostic, "Copy Error message")
-                map("]d", function() vim.diagnostic.jump({ count = 1 }) end, "Next Diagnostic")
-                map("[d", function() vim.diagnostic.jump({ count = -1 }) end, "Prev Diagnostic")
+                map("]e", function()
+                    vim.diagnostic.jump({ count = 1 })
+                    vim.diagnostic.open_float(nil, { focusable = false })
+                end, "Next Diagnostic")
+                map("[e", function()
+                    vim.diagnostic.jump({ count = -1 })
+                    vim.diagnostic.open_float(nil, { focusable = false })
+                end, "Prev Diagnostic")
             end,
-        })
-
-        require("mason").setup()
-        require("mason-lspconfig").setup({
-            ensure_installed = { "pyright", "clangd", "texlab" },
         })
 
         vim.diagnostic.config({
             virtual_text = false,
+            underline = true,
+            update_in_insert = false,
+            severity_sort = true,
+
             signs = {
                 text = {
                     [vim.diagnostic.severity.ERROR] = '✘',
@@ -80,6 +69,7 @@ return {
                     [vim.diagnostic.severity.INFO]  = '»',
                 },
             },
+
             float = {
                 focusable = false,
                 style = "minimal",
@@ -88,9 +78,6 @@ return {
                 header = "",
                 prefix = "",
             },
-            underline = true,
-            update_in_insert = false,
-            severity_sort = true,
         })
     end,
 }
