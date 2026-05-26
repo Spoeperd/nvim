@@ -4,6 +4,7 @@ return {
     lazy = false,
     ---@type snacks.Config
     opts = {
+        indent = { enabled = true },
         picker = {
             enabled = true,
             sources = {
